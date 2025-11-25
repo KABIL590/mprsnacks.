@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MPR Snacks — Kovilpatti</title>
+<style>
+  :root {
+    --brand-yellow: #ffd400; --brand-red: #d32b00; --brand-orange: #ff6f00;
+    --text: #2b2b2b; --bg: #fff8e6; --card: #fffaf0;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+
+  /* --- Responsive Layout --- */
+  header {
+    display: flex; align-items: center; gap: 16px; padding: 14px 20px;
+    background: linear-gradient(90deg, var(--brand-orange), #ffb74d); color: white;
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  }
+  header img.logo { height: 50px; border-radius: 8px; background: white; padding: 4px; }
+  header .title { font-size: 20px; font-weight: 800; }
+  header .contact { margin-left: auto; font-weight: 700; font-size: 14px; }
+  header a { color: white; text-decoration: none; }
+  
+  main { max-width: 1200px; margin: 20px auto; padding: 0 16px; display: grid; grid-template-columns: 1fr 380px; gap: 20px; }
+  @media (max-width: 850px) { main { grid-template-columns: 1fr; } }
+
+  /* --- Components --- */
+  .card { background: var(--card); border-radius: 12px; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
+  .hidden { display: none !important; }
+  
+  .hero { display: flex; gap: 14px; align-items: center; padding: 16px; border-radius: 10px; background: linear-gradient(90deg, rgba(255,214,102,0.2), rgba(255,160,64,0.1)); margin-bottom: 16px; }
+  .product { display:flex; gap:12px; align-items:center; padding:10px; border-radius:10px; background: #fff; margin-bottom: 10px; border:1px solid #eee; }
+  .product img { width:90px; height:80px; object-fit:cover; border-radius:8px; }
+  
+  /* Inputs & Buttons */
+  input, textarea, select { width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; margin-bottom: 10px; font-size:14px; }
+  button { padding:12px; border-radius:8px; border:none; font-weight:700; cursor:pointer; width: 100%; transition: 0.2s; font-size:14px; }
+  button.primary { background: var(--brand-orange); color:white; }
+  button.ghost { background: white; border:1px solid #ddd; color: var(--text); }
+  button.add-btn { width: auto; background: var(--brand-orange); color: white; padding: 6px 12px; font-size:13px; }
+  button:hover { opacity: 0.9; }
+
+  /* Alerts & Tags */
+  .upi-alert { background: #fff8e1; color: #d32b00; padding: 12px; border-radius: 8px; border: 1px dashed #ffb74d; text-align: center; margin-bottom: 12px; display: none; font-weight: bold; }
+  .badge { background:#d32b00; color:white; padding:2px 6px; border-radius:10px; font-size:11px; margin-left:5px; display:none; }
+
+  /* Modal */
+  .modal-overlay { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.6); z-index: 999; padding:20px; backdrop-filter: blur(2px); }
+  .modal-box { background:white; border-radius:10px; width:100%; max-width:800px; padding:20px; max-height: 90vh; overflow-y: auto; }
+
+  /* Admin Tables */
+  table { width:100%; border-collapse:collapse; font-size: 13px; text-align: left; }
+  th, td { padding: 8px; border: 1px solid #eee; }
+  th { background: #f4f4f4; }
+  
+  /* Product Manager Styles */
+  .manage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media(max-width: 600px){ .manage-grid { grid-template-columns: 1fr; } }
+  .prod-item { display:flex; align-items:center; gap:10px; border:1px solid #eee; padding:8px; margin-bottom:8px; border-radius:6px; background:#fafafa; }
+</style>
+</head>
+<body>
+
+<header>
+  <img class="logo" src="https://img.sanishtech.com/u/680773786fd8b1131cbb70aaef74eb78.png" alt="Logo" />
+  <div><div class="title">MPR Snacks</div></div>
+  <div class="contact"><a href="tel:+918675056009">📞 8675056009</a></div>
+</header>
+
+<main>
+  <section>
+    <div class="card">
+      <div class="hero">
+        <div><h1 style="margin:0;font-size:18px">Kovilpatti Special</h1><p style="margin:5px 0 0;font-size:13px">Direct from factory to your home.</p></div>
+      </div>
+      <div id="productsContainer">Loading Products...</div>
+    </div>
+
+    <div class="card hidden" id="customerDetailsCard">
+      <h3 style="margin-top:0; color:var(--brand-red)">Checkout Details</h3>
+      
+      <label>Payment Method</label>
+      <select id="pay_mode" onchange="toggleUpiDisplay(this.value)">
+        <option value="Cash on Delivery">Cash on Delivery</option>
+        <option value="UPI">UPI (GPay/PhonePe)</option>
+      </select>
+      
+      <div id="upiDisplay" class="upi-alert">
+        SCAN & PAY or SEND to UPI ID:<br>
+        <span style="font-size:18px; user-select:all">8675056009</span>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+         <input id="cust_name" placeholder="Full Name (Required)" />
+         <input id="cust_mobile" type="number" placeholder="Mobile Number (Required)" />
+      </div>
+      <textarea id="cust_address" rows="3" placeholder="Full Address with PIN Code (Required)"></textarea>
+      
+      <div style="text-align:right">
+        <button class="ghost" onclick="clearCart()" style="width:auto; color:red; border-color:red; font-size:12px; padding:6px 12px">Clear Cart</button>
+      </div>
+    </div>
+  </section>
+
+  <aside>
+    <div class="card" style="position:sticky; top:90px">
+      <h3>Your Order</h3>
+      <div id="summaryList" style="min-height:50px; color:#666; font-size:14px; margin-bottom:10px">Cart Empty</div>
+      <div style="display:flex; justify-content:space-between; font-weight:800; font-size:18px; color:var(--brand-red)">
+        <div>Total</div><div id="subtotalAmount">₹ 0</div>
+      </div>
+      <button class="primary" style="margin-top:16px" id="placeOrderBtn" onclick="placeOrder()">Place Order & Print Bill</button>
+      
+      <div style="margin-top:20px; padding-top:10px; border-top:1px solid #eee; display:flex; align-items:center">
+        <span style="font-size:11px; color:#999">Owner?</span>
+        <button class="ghost" style="padding:4px 8px; font-size:11px; width:auto; margin-left:auto" onclick="openOwnerModal()">Portal Login</button>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<div class="modal-overlay" id="ownerModal">
+  <div class="modal-box">
+    <div id="loginSection" style="text-align:center; padding:20px">
+        <h2 style="color:var(--brand-red)">Owner Login</h2>
+        <input id="owner_user" placeholder="Username" style="width:250px; display:block; margin:0 auto 10px auto" />
+        <input id="owner_pass" type="password" placeholder="Password" style="width:250px; display:block; margin:0 auto 10px auto" />
+        <button class="primary" style="width:250px" onclick="ownerLogin()">Login</button>
+        <button class="ghost" style="width:250px; margin-top:10px" onclick="closeOwnerModal()">Cancel</button>
+    </div>
+    
+    <div id="dashboardSection" style="display:none">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:15px">
+            <h2 style="margin:0">MPR Admin Portal</h2>
+            <button class="ghost" style="width:auto; padding:6px 12px" onclick="logoutOwner()">Logout</button>
+        </div>
+        
+        <div style="display:flex; gap:10px; margin-bottom:15px">
+            <button class="primary" id="btnTabOrders" onclick="switchTab('orders')">View Orders <span id="msgCount" class="badge">0</span></button>
+            <button class="ghost" id="btnTabProducts" onclick="switchTab('products')">Manage Products</button>
+        </div>
+
+        <div id="viewOrders">
+            <div style="background:#f0f8ff; padding:10px; border-radius:6px; margin-bottom:10px; font-size:12px">
+                <strong>Data Policy:</strong> Orders older than 15 days or exceeding 5,000 messages are automatically deleted.
+            </div>
+            <div style="display:flex; gap:10px; margin-bottom:10px">
+                <button class="ghost" style="width:auto" onclick="refreshOrders()">Refresh List</button>
+                <button class="ghost" style="width:auto; color:red" onclick="deleteAllOrders()">Delete All</button>
+            </div>
+            <div style="overflow-x:auto; border:1px solid #eee; border-radius:6px">
+                <table id="ordersTable">
+                    <thead><tr><th>ID</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Action</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="viewProducts" style="display:none">
+            <div class="manage-grid">
+                <div style="background:#f9f9f9; padding:15px; border-radius:8px">
+                    <h4 style="margin-top:0">Add / Update Product</h4>
+                    <input type="hidden" id="edit_pid">
+                    <label>Product Name</label>
+                    <input id="p_name" placeholder="e.g. Honey Mittai">
+                    <label>Image URL</label>
+                    <input id="p_img" placeholder="https://...">
+                    <label>Prices (₹)</label>
+                    <div style="display:flex; gap:5px">
+                        <input id="p_100" type="number" placeholder="100g">
+                        <input id="p_200" type="number" placeholder="200g">
+                        <input id="p_1000" type="number" placeholder="1kg">
+                    </div>
+                    <button class="primary" onclick="saveProduct()">Save Product</button>
+                    <button class="ghost" onclick="clearProductForm()" style="margin-top:5px">Clear Form</button>
+                </div>
+                
+                <div>
+                    <h4 style="margin-top:0">Current Inventory</h4>
+                    <div id="adminProductList" style="max-height:400px; overflow-y:auto"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================
+   1. DATA & INITIALIZATION
+   ========================================= */
+const DEFAULT_PRODUCTS = [
+  { id:'p1', name:'Kadalai Mittai', img:'https://img.sanishtech.com/u/f33f812429eb209e474416f9b5214c62.jpg', prices:{100:25, 200:40, 1000:200} },
+  { id:'p2', name:'Koko Mittai',     img:'https://img.sanishtech.com/u/76ff464b1d4088234628a7c64b46d61c.jpg', prices:{100:25, 200:40, 1000:200} },
+  { id:'p3', name:'Ellu Mittai',     img:'https://img.sanishtech.com/u/a00b4ae4b2b453d3430f19b71978c809.jpg', prices:{100:25, 200:40, 1000:200} }
+];
+
+let PRODUCTS = [];
+let CART = {};
+
+// Load data immediately
+(function init(){
+    const stored = localStorage.getItem('mpr_products');
+    if(stored) PRODUCTS = JSON.parse(stored);
+    else { PRODUCTS = DEFAULT_PRODUCTS; localStorage.setItem('mpr_products', JSON.stringify(PRODUCTS)); }
+    
+    renderShop();
+    updateCartUI();
+})();
+
+/* =========================================
+   2. CUSTOMER SHOPPING LOGIC
+   ========================================= */
+function renderShop(){
+    const el = document.getElementById('productsContainer');
+    el.innerHTML = '';
+    PRODUCTS.forEach(p => {
+        el.innerHTML += `
+        <div class="product">
+            <img src="${p.img}" onerror="this.src='https://via.placeholder.com/100?text=No+Img'">
+            <div style="flex:1">
+                <strong style="font-size:16px; color:var(--brand-red)">${p.name}</strong><br>
+                <small class="muted">100g: ₹${p.prices[100] || '-'} | 1kg: ₹${p.prices[1000] || '-'}</small>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:5px; width:90px">
+                <select id="s_${p.id}" style="margin:0; padding:6px">
+                    <option value="0">Size</option>
+                    ${p.prices[100] ? `<option value="100">100g</option>` : ''}
+                    ${p.prices[200] ? `<option value="200">200g</option>` : ''}
+                    ${p.prices[1000] ? `<option value="1000">1kg</option>` : ''}
+                </select>
+                <input id="q_${p.id}" type="number" value="1" min="1" placeholder="Qty" style="margin:0; padding:6px">
+                <button class="add-btn" onclick="addToCart('${p.id}')">Add</button>
+            </div>
+        </div>`;
+    });
+}
+
+function addToCart(pid){
+    const s = parseInt(document.getElementById('s_'+pid).value);
+    const q = parseInt(document.getElementById('q_'+pid).value);
+    
+    if(!s || isNaN(s)) return alert("Please select a valid size");
+    if(!q || q<1) return alert("Please enter a valid quantity");
+    
+    const p = PRODUCTS.find(x => x.id === pid);
+    const key = `${pid}_${s}`;
+    const price = p.prices[s];
+    
+    if(CART[key]) CART[key].qty += q;
+    else CART[key] = { pid, name: p.name, size: s, price: price, qty: q };
+    
+    // Reset UI
+    document.getElementById('s_'+pid).value = "0";
+    document.getElementById('q_'+pid).value = "1";
+    updateCartUI();
+}
+
+function updateCartUI(){
+    const list = document.getElementById('summaryList');
+    list.innerHTML='';
+    let tot=0;
+    const keys = Object.keys(CART);
+    
+    if(keys.length > 0) document.getElementById('customerDetailsCard').classList.remove('hidden');
+    else document.getElementById('customerDetailsCard').classList.add('hidden');
+    
+    keys.forEach(k=>{
+        const i = CART[k];
+        const lineTot = i.price * i.qty;
+        tot += lineTot;
+        list.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:4px"><span>${i.name} (${i.size}g) x ${i.qty}</span> <span>₹${lineTot}</span></div>`;
+    });
+    document.getElementById('subtotalAmount').innerText = '₹ ' + tot;
+}
+
+function toggleUpiDisplay(val){ document.getElementById('upiDisplay').style.display = val === 'UPI' ? 'block' : 'none'; }
+function clearCart(){ CART={}; updateCartUI(); }
+
+/* =========================================
+   3. ORDER & BILLING LOGIC
+   ========================================= */
+function placeOrder(){
+    const btn = document.getElementById('placeOrderBtn');
+    if(Object.keys(CART).length === 0) return alert("Cart is empty!");
+    
+    const name = document.getElementById('cust_name').value.trim();
+    const mob = document.getElementById('cust_mobile').value.trim();
+    const addr = document.getElementById('cust_address').value.trim();
+    
+    if(!name || !mob || !addr) return alert("Please fill all details (Name, Mobile, Address)");
+
+    btn.innerText = "Processing...";
+    btn.disabled = true;
+
+    // Create Order
+    const order = {
+        id: 'ORD' + Date.now().toString().slice(-6),
+        timestamp: Date.now(),
+        date: new Date().toLocaleString(),
+        customer: { name, mob, addr },
+        items: CART,
+        total: document.getElementById('subtotalAmount').innerText,
+        pay: document.getElementById('pay_mode').value
+    };
+
+    // Save
+    const history = JSON.parse(localStorage.getItem('mpr_orders') || '[]');
+    history.push(order);
+    localStorage.setItem('mpr_orders', JSON.stringify(history));
+
+    setTimeout(() => {
+        alert("Order Placed Successfully!");
+        
+        // 1. Print Bill
+        printBillData(order);
+        
+        // 2. WhatsApp Notification (Simulating "Immediate Notification")
+        sendWhatsApp(order);
+        
+        // 3. Reset
+        CART={}; updateCartUI();
+        document.getElementById('cust_name').value='';
+        document.getElementById('cust_mobile').value='';
+        document.getElementById('cust_address').value='';
+        btn.innerText = "Place Order & Print Bill";
+        btn.disabled = false;
+    }, 500);
+}
+
+function sendWhatsApp(o){
+    let text = `*New Order: ${o.id}*\nCust: ${o.customer.name} (${o.customer.mob})\nAddr: ${o.customer.addr}\n\n*Items:*\n`;
+    Object.values(o.items).forEach(i => text += `- ${i.name} ${i.size}g x ${i.qty}\n`);
+    text += `\n*Total: ${o.total}* | ${o.pay}`;
+    
+    if(confirm("Send Order to Shop Owner via WhatsApp?")){
+        window.open(`https://wa.me/918675056009?text=${encodeURIComponent(text)}`, '_blank');
+    }
+}
+
+function printBillData(o){
+    const w = window.open('', '', 'width=360,height=550');
+    w.document.write(`
+        <html><body style="font-family:monospace; padding:15px; font-size:12px">
+        <center><h2 style="margin:0">MPR SNACKS</h2>Kovilpatti<br>Ph: 8675056009</center>
+        <hr>
+        ID: ${o.id}<br>Date: ${o.date}<br>Name: ${o.customer.name}<br>Mob: ${o.customer.mob}
+        <hr>
+        <table style="width:100%; text-align:left">
+        <tr><th>Item</th><th style="text-align:right">Amt</th></tr>
+        ${Object.values(o.items).map(i => `<tr><td>${i.name} ${i.size}g x ${i.qty}</td><td style="text-align:right">${i.price*i.qty}</td></tr>`).join('')}
+        </table>
+        <hr>
+        <h2 style="text-align:right; margin:5px 0">Total: ${o.total}</h2>
+        <center>${o.pay}</center>
+        <br><center>*** Thank You ***</center>
+        </body></html>
+    `);
+    w.print();
+}
+
+/* =========================================
+   4. OWNER PORTAL LOGIC
+   ========================================= */
+function openOwnerModal(){ document.getElementById('ownerModal').style.display='flex'; }
+function closeOwnerModal(){ document.getElementById('ownerModal').style.display='none'; }
+
+function ownerLogin(){
+    if(document.getElementById('owner_user').value === 'MPRSNACKS' && document.getElementById('owner_pass').value === 'MPR@26'){
+        document.getElementById('loginSection').style.display='none';
+        document.getElementById('dashboardSection').style.display='block';
+        switchTab('orders');
+    } else alert('Invalid Credentials');
+}
+function logoutOwner(){ location.reload(); }
+
+function switchTab(tab){
+    document.getElementById('viewOrders').style.display = tab==='orders' ? 'block' : 'none';
+    document.getElementById('viewProducts').style.display = tab==='products' ? 'block' : 'none';
+    
+    document.getElementById('btnTabOrders').className = tab==='orders' ? 'primary' : 'ghost';
+    document.getElementById('btnTabProducts').className = tab==='products' ? 'primary' : 'ghost';
+    
+    if(tab==='orders') refreshOrders();
+    if(tab==='products') refreshProductManager();
+}
+
+// --- ORDER MANAGEMENT & RETENTION POLICY ---
+function refreshOrders(){
+    let orders = JSON.parse(localStorage.getItem('mpr_orders') || '[]');
+    
+    // RETENTION POLICY: Delete older than 15 days (15 * 24 * 60 * 60 * 1000 ms)
+    const FIFTEEN_DAYS = 1296000000; 
+    const NOW = Date.now();
+    
+    // Filter old
+    orders = orders.filter(o => (NOW - o.timestamp) < FIFTEEN_DAYS);
+    
+    // Filter if > 5000 (keep newest 5000)
+    if(orders.length > 5000) {
+        orders = orders.slice(orders.length - 5000);
+    }
+    
+    // Save cleaned list back
+    localStorage.setItem('mpr_orders', JSON.stringify(orders));
+    
+    // Render
+    const tbody = document.querySelector('#ordersTable tbody');
+    tbody.innerHTML = '';
+    document.getElementById('msgCount').innerText = orders.length;
+    document.getElementById('msgCount').style.display = 'inline-block';
+
+    orders.slice().reverse().forEach(o => {
+        let items = Object.values(o.items).map(i=>`${i.name} ${i.size}g`).join(', ');
+        tbody.innerHTML += `
+            <tr>
+                <td>${o.id}</td><td>${o.date}</td>
+                <td>${o.customer.name}<br>${o.customer.mob}</td>
+                <td>${items}</td><td>${o.total}</td>
+                <td><button class="ghost" style="padding:4px 8px; font-size:11px" onclick='printBillData(${JSON.stringify(o)})'>Bill</button></td>
+            </tr>`;
+    });
+}
+function deleteAllOrders(){ if(confirm("Permanently delete ALL order history?")) { localStorage.removeItem('mpr_orders'); refreshOrders(); } }
+
+// --- PRODUCT MANAGEMENT ---
+function refreshProductManager(){
+    const list = document.getElementById('adminProductList');
+    list.innerHTML = '';
+    PRODUCTS.forEach(p => {
+        list.innerHTML += `
+        <div class="prod-item">
+            <img src="${p.img}" style="width:40px;height:40px;border-radius:4px" onerror="this.src='https://via.placeholder.com/40'">
+            <div style="flex:1"><b>${p.name}</b><br><span style="font-size:11px;color:#666">₹${p.prices[100]||'-'} / ₹${p.prices[200]||'-'} / ₹${p.prices[1000]||'-'}</span></div>
+            <button class="ghost" style="width:auto;padding:4px 8px;font-size:11px" onclick='editProduct("${p.id}")'>Edit</button>
+            <button class="ghost" style="width:auto;padding:4px 8px;font-size:11px;color:red" onclick='deleteProduct("${p.id}")'>X</button>
+        </div>`;
+    });
+}
+
+function saveProduct(){
+    const id = document.getElementById('edit_pid').value;
+    const name = document.getElementById('p_name').value;
+    const img = document.getElementById('p_img').value;
+    const p100 = document.getElementById('p_100').value;
+    const p200 = document.getElementById('p_200').value;
+    const p1000 = document.getElementById('p_1000').value;
+    
+    if(!name) return alert("Product Name is required");
+    
+    const newProd = {
+        id: id || 'p' + Date.now(),
+        name, 
+        img: img || 'https://via.placeholder.com/100',
+        prices: { 
+            100: p100 ? parseInt(p100) : null, 
+            200: p200 ? parseInt(p200) : null, 
+            1000: p1000 ? parseInt(p1000) : null 
+        }
+    };
+    
+    if(id){
+        const idx = PRODUCTS.findIndex(x => x.id === id);
+        if(idx !== -1) PRODUCTS[idx] = newProd;
+    } else {
+        PRODUCTS.push(newProd);
+    }
+    
+    localStorage.setItem('mpr_products', JSON.stringify(PRODUCTS));
+    refreshProductManager();
+    renderShop(); // Update customer view
+    clearProductForm();
+    alert("Product Saved!");
+}
+
+function editProduct(pid){
+    const p = PRODUCTS.find(x => x.id === pid);
+    document.getElementById('edit_pid').value = p.id;
+    document.getElementById('p_name').value = p.name;
+    document.getElementById('p_img').value = p.img;
+    document.getElementById('p_100').value = p.prices[100] || '';
+    document.getElementById('p_200').value = p.prices[200] || '';
+    document.getElementById('p_1000').value = p.prices[1000] || '';
+}
+
+function deleteProduct(pid){
+    if(confirm("Delete this product?")){
+        PRODUCTS = PRODUCTS.filter(x => x.id !== pid);
+        localStorage.setItem('mpr_products', JSON.stringify(PRODUCTS));
+        refreshProductManager();
+        renderShop();
+    }
+}
+
+function clearProductForm(){
+    document.getElementById('edit_pid').value = '';
+    document.getElementById('p_name').value = '';
+    document.getElementById('p_img').value = '';
+    document.getElementById('p_100').value = '';
+    document.getElementById('p_200').value = '';
+    document.getElementById('p_1000').value = '';
+}
+</script>
+</body>
+</html>
